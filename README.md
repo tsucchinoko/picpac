@@ -14,7 +14,6 @@ A Rust implementation of an npm/pnpm script selector with fuzzy search capabilit
 2. Copy the binary to `/usr/local/bin`
 
 ```
-# 任意のコマンド名で配置
 cp <downloaded-binary-path> /usr/local/bin/picpac
 ```
 
