@@ -16,6 +16,23 @@ struct Args {
     path: Option<String>,
 }
 
+/// Represents the supported package managers
+#[derive(Debug, Clone, Copy)]
+enum PackageManager {
+    Npm,
+    Pnpm,
+}
+
+impl PackageManager {
+    /// Returns the command string for this package manager
+    fn command(&self) -> &'static str {
+        match self {
+            PackageManager::Npm => "npm",
+            PackageManager::Pnpm => "pnpm",
+        }
+    }
+}
+
 /// Main function that orchestrates the script selection and execution process.
 ///
 /// # Errors
@@ -54,7 +71,7 @@ fn main() -> Result<()> {
     }
 
     // Run the selected script
-    run_script(&package_manager, &script_name)?;
+    run_script(package_manager, &script_name)?;
 
     Ok(())
 }
@@ -75,12 +92,12 @@ fn change_directory(path: &str) -> Result<()> {
 
 /// Determines which package manager to use based on lock files.
 ///
-/// Returns "pnpm" if pnpm-lock.yaml exists, otherwise "npm".
-fn determine_package_manager() -> String {
+/// Returns `PackageManager::Pnpm` if pnpm-lock.yaml exists, otherwise `PackageManager::Npm`.
+fn determine_package_manager() -> PackageManager {
     if Path::new("pnpm-lock.yaml").exists() {
-        String::from("pnpm")
+        PackageManager::Pnpm
     } else {
-        String::from("npm")
+        PackageManager::Npm
     }
 }
 
@@ -162,21 +179,22 @@ fn select_script(scripts: &[String]) -> Result<String> {
 ///
 /// # Arguments
 ///
-/// * `package_manager` - The package manager to use ("npm" or "pnpm")
+/// * `package_manager` - The package manager to use
 /// * `script_name` - The name of the script to run
 ///
 /// # Errors
 ///
 /// Returns an error if the script execution fails to start
-fn run_script(package_manager: &str, script_name: &str) -> Result<()> {
-    println!("Running: {} run {}", package_manager, script_name);
+fn run_script(package_manager: PackageManager, script_name: &str) -> Result<()> {
+    let cmd = package_manager.command();
+    println!("Running: {} run {}", cmd, script_name);
 
-    let status = Command::new(package_manager)
+    let status = Command::new(cmd)
         .args(["run", script_name])
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .status()
-        .with_context(|| format!("Failed to execute {} run {}", package_manager, script_name))?;
+        .with_context(|| format!("Failed to execute {} run {}", cmd, script_name))?;
 
     if !status.success() {
         eprintln!("Command failed with exit code: {:?}", status.code());
