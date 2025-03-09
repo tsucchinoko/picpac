@@ -635,6 +635,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2355d85b9a3786f481747ced0e0ff2ba35213a1f9bd406ed906554d7af805a1"
 
 [[package]]
+name = "picpac"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap 4.5.31",
+ "home",
+ "serde",
+ "serde_json",
+ "skim",
+]
+
+[[package]]
 name = "pin-utils"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -653,18 +665,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a31971752e70b8b2686d7e46ec17fb38dad4051d94024c88df49b667caea9c84"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "pss"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap 4.5.31",
- "home",
- "serde",
- "serde_json",
- "skim",
 ]
 
 [[package]]
