@@ -60,7 +60,7 @@ if [[ -n $ZSH_VERSION ]]; then
 fi
 ```
 
-> ![WARNNING]
+> [!WARNING]
 > keybinding is not working in Warp.
 
 
