@@ -45,6 +45,8 @@ Add to your `.bashrc` or `.zshrc`:
 # picpac
 # Optional: Add a keyboard shortcut in Zsh
 if [[ -n $ZSH_VERSION ]]; then
+  # Disable flow control on terminal
+  stty -ixon
 
   # check if picpac command exists
   if command -v picpac &>/dev/null; then
