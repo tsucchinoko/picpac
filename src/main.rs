@@ -21,8 +21,7 @@ fn main() -> Result<()> {
 
     // Change to the specified directory or use current directory
     if let Some(path) = &args.path {
-        std::env::set_current_dir(path)
-            .context(format!("Failed to change directory to {}", path))?;
+        change_directory(path)?;
     }
 
     // Check if package.json exists
@@ -31,13 +30,40 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    // Determine package manager (npm or pnpm)
-    let package_manager = if Path::new("pnpm-lock.yaml").exists() {
-        "pnpm"
-    } else {
-        "npm"
-    };
+    // Determine package manager and get scripts
+    let package_manager = determine_package_manager();
+    let scripts = get_scripts_from_package_json()?;
 
+    if scripts.is_empty() {
+        eprintln!("Error: There are no scripts in package.json");
+        return Ok(());
+    }
+
+    // Select script using fuzzy finder
+    let script_name = select_script(&scripts)?;
+    if script_name.is_empty() {
+        return Ok(());
+    }
+
+    // Run the selected script
+    run_script(&package_manager, &script_name)?;
+
+    Ok(())
+}
+
+fn change_directory(path: &str) -> Result<()> {
+    std::env::set_current_dir(path).context(format!("Failed to change directory to {}", path))
+}
+
+fn determine_package_manager() -> String {
+    if Path::new("pnpm-lock.yaml").exists() {
+        "pnpm".to_string()
+    } else {
+        "npm".to_string()
+    }
+}
+
+fn get_scripts_from_package_json() -> Result<Vec<String>> {
     // Read package.json
     let package_json = fs::read_to_string("package.json").context("Failed to read package.json")?;
 
@@ -46,24 +72,22 @@ fn main() -> Result<()> {
         serde_json::from_str(&package_json).context("Failed to parse package.json")?;
 
     // Extract scripts
-    let scripts = match &package_data["scripts"] {
+    match &package_data["scripts"] {
         Value::Object(scripts_obj) => {
             if scripts_obj.is_empty() {
-                eprintln!("Error: There are no scripts in package.json");
-                return Ok(());
+                return Ok(Vec::new());
             }
 
-            scripts_obj
+            Ok(scripts_obj
                 .iter()
                 .map(|(key, value)| format!("{} = {}", key, value.as_str().unwrap_or("")))
-                .collect::<Vec<String>>()
+                .collect())
         }
-        _ => {
-            eprintln!("Error: There are no scripts in package.json");
-            return Ok(());
-        }
-    };
+        _ => Ok(Vec::new()),
+    }
+}
 
+fn select_script(scripts: &[String]) -> Result<String> {
     // Use skim for fuzzy selection
     let options = SkimOptionsBuilder::default()
         .height(Some("50%"))
@@ -79,18 +103,17 @@ fn main() -> Result<()> {
         .unwrap_or_else(|| Vec::new());
 
     if selected_items.is_empty() {
-        return Ok(());
+        return Ok(String::new());
     }
 
     // Extract the script name from the selected item
     let selected = selected_items[0].output();
     let script_name = selected.split(" = ").next().unwrap_or("");
 
-    if script_name.is_empty() {
-        return Ok(());
-    }
+    Ok(script_name.to_string())
+}
 
-    // Run the selected script
+fn run_script(package_manager: &str, script_name: &str) -> Result<()> {
     println!("Running: {} run {}", package_manager, script_name);
 
     let status = Command::new(package_manager)
